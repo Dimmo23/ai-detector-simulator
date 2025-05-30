@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Detector - Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Base styles for Light Mode */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa; /* Slightly cooler, very light gray background */
+            color: #374151; /* Default text color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.4s ease, color 0.4s ease; /* Smooth transition for theme change */
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+            padding: 3.5rem 3rem;
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #eef2f6;
+            transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; /* Smooth transition */
+        }
+        h1 {
+            background: linear-gradient(to right, #4299e1, #38a169); /* Brighter Blue to slightly darker Green gradient */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            font-size: 3rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+        .description {
+            color: #374151;
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        .input-group {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem; /* Space between elements in the group */
+        }
+        .file-input-label, .link-input-field {
+            width: calc(100% - 2rem); /* Adjusted width for padding */
+            max-width: 400px; /* Max width for inputs */
+        }
+        .file-input-label {
+            display: inline-block;
+            background-color: #4299e1; /* Primary blue */
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 6px 18px rgba(66, 153, 225, 0.4);
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 0.95rem;
+        }
+        .file-input-label:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(66, 153, 225, 0.55);
+        }
+        .file-input-label:active {
+            transform: translateY(-2px);
+        }
+        .link-input-field {
+            padding: 1rem 1.25rem;
+            border-radius: 0.75rem;
+            border: 1px solid #cbd5e1;
+            font-size: 1rem;
+            color: #374151;
+            background-color: #f8fafc;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .link-input-field:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.3);
+        }
+        .scan-button {
+            background-color: #38a169; /* Primary green */
+            color: white;
+            padding: 1rem 3rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            font-weight: bold;
+            margin-top: 3rem;
+            border: none;
+            box-shadow: 0 8px 22px rgba(56, 161, 105, 0.5);
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            font-size: 0.95rem;
+        }
+        .scan-button:hover {
+            background-color: #2f855a; /* Darker green on hover */
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(56, 161, 105, 0.7);
+        }
+        .scan-button:active {
+            transform: translateY(-2px);
+        }
+        .result-box {
+            border-radius: 0.75rem;
+            padding: 1.75rem;
+            margin-top: 3rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            animation: fadeInScale 0.7s ease-out forwards;
+        }
+        .result-box.real {
+            background-color: #f0fdf4; /* Very light green for Real */
+            border: 1px solid #68d391; /* Green border */
+            color: #2f855a; /* Dark green text */
+        }
+        .result-box.ai {
+            background-color: #fff5f5; /* Very light red for AI */
+            border: 1px solid #fc8181; /* Red border */
+            color: #e53e3e; /* Dark red text */
+        }
+        .media-preview {
+            max-width: 100%;
+            max-height: 450px;
+            object-fit: contain;
+            border-radius: 0.75rem;
+            margin-top: 2.5rem;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+            display: none;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .youtube-embed-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            margin-top: 2.5rem;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+            display: none;
+        }
+        .youtube-embed-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        .loading-spinner {
+            border: 6px solid rgba(0, 0, 0, 0.1);
+            border-top: 6px solid #4299e1; /* Title gradient color */
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+            margin: 3rem auto 0;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.92); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .disclaimer {
+            font-size: 0.7rem;
+            color: #a0aec0;
+            margin-top: 3.5rem;
+            padding: 0.7rem 1rem;
+            background-color: #fdfdfd;
+            border-radius: 0.75rem;
+            border: 1px solid #edf2f7;
+            text-align: left;
+            line-height: 1.3;
+            transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease;
+        }
+        .disclaimer p:first-child {
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+            color: #718096;
+        }
+
+        /* --- DARK MODE STYLES --- */
+        html.dark {
+            body {
+                background-color: #1a202c;
+                color: #e2e8f0;
+            }
+            .container {
+                background-color: #2d3748;
+                box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+                border-color: #4a5568;
+            }
+            .description {
+                color: #cbd5e0;
+            }
+            .file-input-label {
+                background-color: #5a67d8;
+                box-shadow: 0 6px 18px rgba(90, 103, 216, 0.4);
+            }
+            .file-input-label:hover {
+                background-color: #434190;
+                box-shadow: 0 12px 30px rgba(90, 103, 216, 0.55);
+            }
+            .link-input-field {
+                background-color: #2d3748;
+                border-color: #4a5568;
+                color: #e2e8f0;
+            }
+            .link-input-field:focus {
+                border-color: #5a67d8;
+                box-shadow: 0 0 0 3px rgba(90, 103, 216, 0.3);
+            }
+            .scan-button {
+                background-color: #68d391;
+                box-shadow: 0 8px 22px rgba(104, 211, 145, 0.5);
+            }
+            .scan-button:hover {
+                background-color: #48bb78;
+                box-shadow: 0 15px 35px rgba(104, 211, 145, 0.7);
+            }
+            .loading-spinner {
+                border-top-color: #5a67d8;
+            }
+            .result-box.real {
+                background-color: #2f4c39;
+                border-color: #48bb78;
+                color: #9ae6b4;
+            }
+            .result-box.ai {
+                background-color: #5a2c2c;
+                border-color: #e53e3e;
+                color: #feb2b2;
+            }
+            .media-preview, .youtube-embed-container {
+                 box-shadow: 0 12px 35px rgba(255, 255, 255, 0.08);
+            }
+            .disclaimer {
+                background-color: #28303d;
+                border-color: #4a5568;
+                color: #a0aec0;
+            }
+            .disclaimer p:first-child {
+                color: #cbd5e0;
+            }
+            .theme-toggle {
+                background-color: #4a5568;
+                color: #e2e8f0;
+            }
+            .theme-toggle:hover {
+                background-color: #2d3748;
+            }
+        }
+
+        /* --- Responsive Styles --- */
+        @media (max-width: 640px) {
+            .container {
+                padding: 2.5rem 1.5rem;
+                border-radius: 1rem;
+            }
+            h1 {
+                font-size: 2.5rem;
+            }
+            .description {
+                font-size: 1rem;
+                margin-bottom: 2rem;
+            }
+            .file-input-label, .scan-button {
+                padding: 0.8rem 1.6rem;
+                font-size: 0.85rem;
+            }
+            .result-box {
+                font-size: 1.2rem;
+                padding: 1.25rem;
+                margin-top: 2rem;
+            }
+            .media-preview, .youtube-embed-container {
+                max-height: 250px;
+                margin-top: 2rem;
+            }
+            .loading-spinner {
+                width: 35px;
+                height: 35px;
+                margin-top: 2rem;
+            }
+            .disclaimer {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.7rem;
+                margin-top: 2.5rem;
+            }
+            .theme-toggle {
+                right: 15px;
+                top: 15px;
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+        }
+        /* Theme toggle button styling */
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background-color: #cbd5e0;
+            color: #2d3748;
+            border: none;
+            border-radius: 9999px;
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10; /* Ensure it's above other content */
+        }
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .theme-toggle .icon {
+            font-size: 1.1em;
+            line-height: 1;
+        }
+    </style>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XHYB7K643K"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-XHYB7K643K');
+    </script>
+    </head>
+<body>
+    <button id="themeToggle" class="theme-toggle">
+        <span class="icon">☀️</span>
+        <span>Light Mode</span>
+    </button>
+
+    <div class="container">
+        <h1 class="font-extrabold">AI Content Detector</h1>
+        <p class="description">Upload an image or video, or paste a link to get a simulated assessment of its origin (real or AI-generated).</p>
+
+        <div class="input-group">
+            <input type="file" id="mediaInput" accept="image/*,video/*" class="hidden" onchange="handleFileInput(event)">
+            <label for="mediaInput" class="file-input-label">Upload Image or Video</label>
+            <p class="text-gray-500 text-sm">OR</p>
+            <input type="text" id="linkInput" placeholder="Paste YouTube or Instagram link here..." class="link-input-field" oninput="handleLinkInput(event)">
+        </div>
+
+        <div id="previewContainer" class="mt-4">
+            <img id="imagePreview" class="media-preview hidden" alt="Image Preview">
+            <video id="videoPreview" class="media-preview hidden" controls></video>
+            <div id="youtubeEmbed" class="youtube-embed-container hidden"></div>
+            <p id="instagramPlaceholder" class="hidden text-gray-500 mt-4">Instagram video preview not available directly due to platform restrictions.</p>
+        </div>
+
+        <button id="scanButton" class="scan-button" disabled>Analyze Content</button>
+
+        <div id="loadingSpinner" class="loading-spinner"></div>
+
+        <div id="resultBox" class="result-box hidden">
+            <p id="resultText"></p>
+        </div>
+
+        <div class="disclaimer">
+            <p>Important Disclaimer :</p>
+            <p>This tool provides a <span class="font-semibold">simulated</span> result for demonstration purposes only. Detecting AI-generated content in real-world scenarios is a highly complex and evolving challenge. Direct analysis of external video links (YouTube, Instagram) from a browser is often restricted by platform APIs and security policies. This simulation does not use a real AI detection model.</p>
+        </div>
+    </div>
+
+    <script>
+        const mediaInput = document.getElementById('mediaInput');
+        const linkInput = document.getElementById('linkInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const videoPreview = document.getElementById('videoPreview');
+        const youtubeEmbed = document.getElementById('youtubeEmbed');
+        const instagramPlaceholder = document.getElementById('instagramPlaceholder');
+        const scanButton = document.getElementById('scanButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultBox = document.getElementById('resultBox');
+        const resultText = document.getElementById('resultText');
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement; // Represents the <html> tag
+
+        let uploadedFile = null;
+        let inputLink = null;
+
+        /**
+         * Resets all previews and results.
+         */
+        function resetUI() {
+            imagePreview.classList.add('hidden');
+            videoPreview.classList.add('hidden');
+            youtubeEmbed.classList.add('hidden');
+            youtubeEmbed.innerHTML = ''; // Clear YouTube embed
+            instagramPlaceholder.classList.add('hidden');
+            resultBox.classList.add('hidden');
+            resultBox.classList.remove('ai', 'real');
+            loadingSpinner.classList.add('hidden');
+            scanButton.disabled = true;
+            uploadedFile = null;
+            inputLink = null;
+        }
+
+        /**
+         * Sets the theme based on user preference or defaults to dark mode.
+         */
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                htmlElement.classList.remove('dark');
+                themeToggle.innerHTML = '<span class="icon">🌙</span><span>Dark Mode</span>';
+            } else {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerHTML = '<span class="icon">☀️</span><span>Light Mode</span>';
+            }
+        }
+
+        /**
+         * Toggles the theme between light and dark.
+         */
+        themeToggle.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                htmlElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeToggle.innerHTML = '<span class="icon">🌙</span><span>Dark Mode</span>';
+            } else {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerHTML = '<span class="icon">☀️</span><span>Light Mode</span>';
+            }
+        });
+
+        // Initialize theme on page load
+        initializeTheme();
+
+        /**
+         * Handles file input change.
+         * @param {Event} event - The file input change event.
+         */
+        function handleFileInput(event) {
+            resetUI(); // Clear previous state
+            uploadedFile = event.target.files[0];
+            linkInput.value = ''; // Clear link input if file is selected
+
+            if (!uploadedFile) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (uploadedFile.type.startsWith('image/')) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                } else if (uploadedFile.type.startsWith('video/')) {
+                    videoPreview.src = e.target.result;
+                    videoPreview.classList.remove('hidden');
+                    videoPreview.load();
+                }
+                scanButton.disabled = false;
+            };
+            reader.onerror = function() {
+                console.error("Error reading file.");
+                resultText.textContent = "Error: Could not read the file.";
+                resultBox.classList.remove('hidden');
+                scanButton.disabled = true;
+            };
+            reader.readAsDataURL(uploadedFile);
+        }
+
+        /**
+         * Handles link input change.
+         * @param {Event} event - The link input change event.
+         */
+        function handleLinkInput(event) {
+            resetUI(); // Clear previous state
+            inputLink = event.target.value.trim();
+            mediaInput.value = ''; // Clear file input if link is entered
+
+            if (!inputLink) {
+                return;
+            }
+
+            // Simple regex to detect YouTube video IDs
+            const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/i;
+            const instagramRegex = /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)\/?/i;
+
+            const youtubeMatch = inputLink.match(youtubeRegex);
+            const instagramMatch = inputLink.match(instagramRegex);
+
+            if (youtubeMatch && youtubeMatch[1]) {
+                const videoId = youtubeMatch[1];
+                youtubeEmbed.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+                youtubeEmbed.classList.remove('hidden');
+                scanButton.disabled = false;
+            } else if (instagramMatch) {
+                instagramPlaceholder.classList.remove('hidden');
+                scanButton.disabled = false;
+            } else {
+                resultText.textContent = "Please enter a valid YouTube or Instagram link.";
+                resultBox.classList.remove('hidden');
+                scanButton.disabled = true;
+            }
+        }
+
+        /**
+         * Simulates the content scanning process.
+         * Displays a loading spinner, then a randomized "real" or "AI" result.
+         */
+        scanButton.addEventListener('click', () => {
+            if (!uploadedFile && !inputLink) {
+                resultText.textContent = "Please upload a file or paste a link first.";
+                resultBox.classList.add('hidden');
+                resultBox.classList.remove('ai', 'real');
+                return;
+            }
+
+            // Hide previous results and show loading spinner
+            resultBox.classList.add('hidden');
+            resultBox.classList.remove('ai', 'real');
+            loadingSpinner.classList.remove('hidden');
+            scanButton.disabled = true; // Disable button during scan
+
+            // Simulate network request and AI processing delay
+            setTimeout(() => {
+                loadingSpinner.classList.add('hidden'); // Hide spinner
+
+                // Simulate AI detection result
+                const isAI = Math.random() > 0.5; // 50% chance of being AI
+                const confidence = Math.floor(Math.random() * 20) + 80; // Confidence between 80-99%
+
+                if (isAI) {
+                    resultText.textContent = `Analysis: Likely AI-Generated (Confidence: ${confidence}%)`;
+                    resultBox.classList.add('ai');
+                    resultBox.classList.remove('real');
+                } else {
+                    resultText.textContent = `Analysis: Likely Real (Confidence: ${confidence}%)`;
+                    resultBox.classList.add('real');
+                    resultBox.classList.remove('ai');
+                }
+
+                resultBox.classList.remove('hidden'); // Show result box
+                scanButton.disabled = false; // Re-enable scan button
+            }, 2500); // Simulate 2.5 seconds of processing
+        });
+    </script>
+</body>
+</html>
